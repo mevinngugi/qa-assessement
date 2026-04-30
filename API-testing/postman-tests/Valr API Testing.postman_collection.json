@@ -1,0 +1,423 @@
+{
+  "info": {
+    "_postman_id": "0251cc5a-66c9-447f-abb5-9962156b450c",
+    "name": "Valr API Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "19738279"
+  },
+  "item": [
+    {
+      "name": "2.1 — Public API Exploration",
+      "item": [
+        {
+          "name": "Task A — Validate the BTC/ZAR market summary",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Status to be 200",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "//Response time to be less than 500ms",
+                  "pm.test(\"Response time to be less than 500ms\", function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "var response = pm.response.json();",
+                  "",
+                  "//currency pair to be the same as the currency pair in the request",
+                  "pm.test(\"Currency Pair Match\", function () {",
+                  "    pm.expect(response.currencyPair).to.eql(pm.environment.get(\"currencyPair\"));",
+                  "});",
+                  "",
+                  "//ask price to be greater than bid price",
+                  "pm.test(\"Ask Price Greater than Bid Price\", function () {",
+                  "    pm.expect(response.askPrice > response.bidPrice).to.be.true",
+                  "});",
+                  "",
+                  "//Expect response to have the following keys",
+                  "pm.test(\"Response contains expected keys\", function () {",
+                  "    pm.expect(response).to.have.all.keys(\"currencyPair\", \"askPrice\", \"bidPrice\", \"lastTradedPrice\", \"previousClosePrice\", \"baseVolume\", \"quoteVolume\", \"highPrice\", \"lowPrice\", \"created\", \"changeFromPrevious\", \"markPrice\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-VALR-API-KEY",
+                "value": "",
+                "type": "text"
+              },
+              {
+                "key": "X-VALR-SIGNATURE",
+                "value": "",
+                "type": "text"
+              },
+              {
+                "key": "X-VALR-TIMESTAMP",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/v1/public/{{currencyPair}}/marketsummary",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "{{currencyPair}}",
+                "marketsummary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Task B — Verify Order book integrity check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Status to be 200",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "//Response time to be less than 500ms",
+                  "pm.test(\"Response time to be less than 500ms\", function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "//best bid is lower than best ask",
+                  "//Ask orders are sorted by price ascending l-h",
+                  "//Bid orders are sorted by price descending h-l",
+                  "",
+                  "var response = pm.response.json();",
+                  "",
+                  "",
+                  "console.log(response.Bids.at(-1).price<response.Asks[0].price)",
+                  "pm.test(\"The best bid is lower than best ask price\", function(){",
+                  "    pm.expect(response.Bids.at(-1).price < response.Asks[0].price).to.be.true",
+                  "})",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "//Has both Asks and Bids",
+                  "//Each element in the list has side, quantity, price, currencyPair, orderCount",
+                  "//side is either \"buy\" or \"sell\"",
+                  "//price is greater than 0"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/v1/public/{{currencyPair}}/orderbook",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "{{currencyPair}}",
+                "orderbook"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Task C — Currency pair validation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var response = pm.response.json()",
+                  "",
+                  "console.log(response.length)",
+                  "console.log(response)",
+                  "console.log(response instanceof Array)"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.valr.com/v1/public/pairs",
+              "protocol": "https",
+              "host": [
+                "api",
+                "valr",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "pairs"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2.1 Task D — Negative / boundary tests on public endpoints",
+      "item": [
+        {
+          "name": "Market Summary for an invalid currency pair",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.valr.com/v1/public/dsad/marketsummary",
+              "protocol": "https",
+              "host": [
+                "api",
+                "valr",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "dsad",
+                "marketsummary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Market summary for an inactive pair",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.valr.com/v1/public/LTCBTC/marketsummary",
+              "protocol": "https",
+              "host": [
+                "api",
+                "valr",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "LTCBTC",
+                "marketsummary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Market summary for an unsupported pair",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.valr.com/v1/public/rerwr/marketsummary",
+              "protocol": "https",
+              "host": [
+                "api",
+                "valr",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "rerwr",
+                "marketsummary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Order book for an invalid currency pair",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Order book for an inactive currency pair",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.valr.com/v1/public/LTCBTC/orderbook",
+              "protocol": "https",
+              "host": [
+                "api",
+                "valr",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "LTCBTC",
+                "orderbook"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Order book for an unsupported currency pair",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.valr.com/v1/public/sdas/orderbook",
+              "protocol": "https",
+              "host": [
+                "api",
+                "valr",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "public",
+                "sdas",
+                "orderbook"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Private",
+      "item": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          "/* Pre-requisite",
+          "==================",
+          "1) Create a new Environment in Postman.",
+          "2) Add two variables: \"yourApiKey\" and \"yourApiSecret\" to the Environment. Provide appropriate initial values for these variables. That is, the Api Key and Api Secret for your account.",
+          "3) Enable this environment for your requests.",
+          "4) For each request, this script generates the following two new environment variables:",
+          "",
+          "* requestSignature",
+          "* requestTimestamp",
+          "",
+          "5) Ensure that the following three headers are sent with every request:",
+          "",
+          "X-VALR-API-KEY: {{yourApiKey}}",
+          "X-VALR-SIGNATURE: {{requestSignature}}",
+          "X-VALR-TIMESTAMP: {{requestTimestamp}}",
+          "",
+          "Subaccounts",
+          "==================",
+          "To perform a request impersonating a specific subaccount, the subaccount ID must be provided. The ID can be determined by using `Account/Subaccounts/Retrieve Subaccounts`. Once the ID is determined, it can be added to the request by either adding the `X-VALR-SUB-ACCOUNT-ID` header, with the ID as value, to the request directly, or by adding the variable {{yourSubAccountId}} to the Postman Environment. If both are provided, the header has precedence. If the variable is provided it will be added to every request.",
+          "",
+          "Please note: Requests that may only be performed on the Primary account will fail with a \"401: Unauthorized\" response if the subaccount ID is included.",
+          "",
+          "*/",
+          "",
+          "var YOUR_API_KEY = pm.environment.get('yourApiKey');",
+          "console.log(\"Get key: \" + YOUR_API_KEY)",
+          "",
+          "var YOUR_API_SECRET = pm.environment.get('apiSecret');",
+          "console.log(\"Get secret: \" + YOUR_API_SECRET)",
+          "",
+          "var subAccountHeader = pm.request.headers.find((header) => header.key === 'X-VALR-SUB-ACCOUNT-ID' && !header.disabled)",
+          "var YOUR_SUB_ACCOUNT_ID = subAccountHeader ? subAccountHeader.value ",
+          "        : pm.environment.get('yourSubAccountId');",
+          "",
+          "var requestTimestamp = (new Date()).getTime();",
+          "console.log(\"Get time: \" + requestTimestamp)",
+          "",
+          "",
+          "function getPath(url) {",
+          "    var pathRegex = /(?:.+?\\:\\/\\/.+?)?(\\/.+)/;",
+          "    var result = url.match(pathRegex);",
+          "    return result && result.length > 1 ? result[1] : ''; ",
+          "}",
+          "",
+          " ",
+          "function getHmacDigest(httpMethod, requestUrl, requestBody) {",
+          "    var requestPath = getPath(requestUrl.toString());",
+          "    if (httpMethod == 'GET' || !requestBody) {",
+          "        requestBody = ''; ",
+          "    } ",
+          "",
+          "    var requestData = [requestTimestamp, httpMethod.toUpperCase(), requestPath, requestBody, YOUR_SUB_ACCOUNT_ID].join(\"\");",
+          "    console.log(requestData)",
+          "    var hmacDigest = CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA512(requestData, YOUR_API_SECRET));",
+          "    console.log(\"inside getHmacDigest:\" + hmacDigest)",
+          "    return hmacDigest;",
+          "}",
+          " ",
+          "pm.environment.set('requestSignature', getHmacDigest(pm.request.method, pm.request.url, pm.request.body));",
+          "console.log(pm.environment.get('requestSignature'))",
+          "pm.environment.set('requestTimestamp', requestTimestamp);",
+          "console.log(pm.environment.get('requestTimestamp'))",
+          "",
+          "",
+          "if (YOUR_SUB_ACCOUNT_ID && YOUR_SUB_ACCOUNT_ID > 0 && !subAccountHeader) {",
+          "    pm.request.headers.add({ key: 'X-VALR-SUB-ACCOUNT-ID', value: `${YOUR_SUB_ACCOUNT_ID}` });",
+          "}",
+          ""
+        ]
+      }
+    }
+  ]
+}
